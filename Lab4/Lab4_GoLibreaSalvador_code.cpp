@@ -21,6 +21,6 @@ int multiply(int num, int multiplier) {
 }
 
 int main(void) {
-    cout << multiply(-2, 19) << endl;
+    cout << multiply(2, 19) << endl;
     return 0;
 }
