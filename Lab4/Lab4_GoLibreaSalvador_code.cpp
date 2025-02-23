@@ -2,30 +2,29 @@
 using namespace std;
 
 int multiply(int num, int multiplier) {
-    // Checks if one and only one of the numbers (num and multiplier) is negative
-    bool neg = (num < 0) ^ (multiplier < 0);
+    // Checks if one and only one of the numbers (num XOR multiplier) is 
+    // negative by XOR-ing their sign bits
+    bool neg = (num>>31) ^ (multiplier>>31);
 
     // Converts both numbers to positive values
-    unsigned int absNum = (num < 0) ? -num : num;
-    unsigned int absMult = (multiplier < 0) ? -multiplier : multiplier;
+    num = (num>>31) ? 0-num : num;
+    multiplier = (multiplier>>31) ? 0-multiplier : multiplier;
     
     int result = 0;
 
     // While multiplier still has significant bits continue shifting and adding
-    while (absMult != 0) {
+    while (multiplier != 0) {
         // If the least significant bit of the multiplier is 1, add the current
         // value of num to the result
-        if (absMult & 1) {
-            result += absNum;
+        if (multiplier & 1) {
+            result += num;
         }
-
         // Shift num to the left by 1
-        absNum <<= 1;
-
+        num <<= 1;
         // Shift multiplier to the right by 1
-        absMult >>= 1;
+        multiplier >>= 1;
     }
-    return neg ? -result : result;
+    return result;
 }
 
 int main(void) {
