@@ -2,7 +2,14 @@
 using namespace std;
 #include <chrono>
 
-int multiply(int num, unsigned int multiplier) {
+int multiply(int num, int multiplier) {
+    // Checks if one and only one of the numbers (num XOR multiplier) is 
+    // negative by XOR-ing their sign bits
+    bool neg = (num>>31) ^ (multiplier>>31);
+
+    // Converts both numbers to positive values
+    num = (num>>31) ? 0-num : num;
+    multiplier = (multiplier>>31) ? 0-multiplier : multiplier;
     
     int result = 0;
 
