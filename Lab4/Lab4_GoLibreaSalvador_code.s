@@ -4,7 +4,7 @@
 	.def	_Z8multiplyii;	.scl	2;	.type	32;	.endef
 	.seh_proc	_Z8multiplyii
 _Z8multiplyii:
-.LFB2214:
+.LFB2538:
 	pushq	%rbp
 	.seh_pushreg	%rbp
 	movq	%rsp, %rbp
@@ -14,36 +14,41 @@ _Z8multiplyii:
 	.seh_endprologue
 	movl	%ecx, 16(%rbp)
 	movl	%edx, 24(%rbp)
-	movl	16(%rbp), %eax
-	xorl	24(%rbp), %eax
+	movl	$0, -4(%rbp)
+	movl	24(%rbp), %eax
 	shrl	$31, %eax
 	movb	%al, -5(%rbp)
-	movl	16(%rbp), %eax
-	movl	%eax, %edx
-	negl	%edx
-	cmovns	%edx, %eax
-	movl	%eax, 16(%rbp)
+	cmpb	$0, -5(%rbp)
+	je	.L2
 	movl	24(%rbp), %eax
-	movl	%eax, %edx
-	negl	%edx
-	cmovns	%edx, %eax
+	negl	%eax
+	jmp	.L3
+.L2:
+	movl	24(%rbp), %eax
+.L3:
 	movl	%eax, 24(%rbp)
-	movl	$0, -4(%rbp)
-	jmp	.L2
-.L4:
+	jmp	.L4
+.L6:
 	movl	24(%rbp), %eax
 	andl	$1, %eax
 	testl	%eax, %eax
-	je	.L3
+	je	.L5
 	movl	16(%rbp), %eax
 	addl	%eax, -4(%rbp)
-.L3:
+.L5:
 	sall	16(%rbp)
 	sarl	24(%rbp)
-.L2:
+.L4:
 	cmpl	$0, 24(%rbp)
-	jne	.L4
+	jne	.L6
+	cmpb	$0, -5(%rbp)
+	je	.L7
 	movl	-4(%rbp), %eax
+	negl	%eax
+	jmp	.L9
+.L7:
+	movl	-4(%rbp), %eax
+.L9:
 	addq	$16, %rsp
 	popq	%rbp
 	ret
@@ -52,7 +57,7 @@ _Z8multiplyii:
 	.def	main;	.scl	2;	.type	32;	.endef
 	.seh_proc	main
 main:
-.LFB2215:
+.LFB2539:
 	pushq	%rbp
 	.seh_pushreg	%rbp
 	movq	%rsp, %rbp
@@ -61,8 +66,8 @@ main:
 	.seh_stackalloc	32
 	.seh_endprologue
 	call	__main
-	movl	$-3, %edx
-	movl	$-6, %ecx
+	movl	$-1, %edx
+	movl	$-1, %ecx
 	call	_Z8multiplyii
 	movl	%eax, %edx
 	movq	.refptr._ZSt4cout(%rip), %rax
@@ -83,6 +88,12 @@ _ZNSt8__detail30__integer_to_chars_is_unsignedIjEE:
 _ZNSt8__detail30__integer_to_chars_is_unsignedImEE:
 	.byte	1
 _ZNSt8__detail30__integer_to_chars_is_unsignedIyEE:
+	.byte	1
+_ZSt12__is_ratio_vISt5ratioILx1ELx1000000000EEE:
+	.byte	1
+_ZSt12__is_ratio_vISt5ratioILx1ELx1EEE:
+	.byte	1
+_ZSt12__is_ratio_vISt5ratioILx1000000000ELx1EEE:
 	.byte	1
 	.def	__main;	.scl	2;	.type	32;	.endef
 	.ident	"GCC: (Rev2, Built by MSYS2 project) 14.2.0"
