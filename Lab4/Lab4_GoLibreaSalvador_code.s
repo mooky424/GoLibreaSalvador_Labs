@@ -4,7 +4,7 @@
 	.def	_Z8multiplyii;	.scl	2;	.type	32;	.endef
 	.seh_proc	_Z8multiplyii
 _Z8multiplyii:
-.LFB2538:
+.LFB2214:
 	pushq	%rbp
 	.seh_pushreg	%rbp
 	movq	%rsp, %rbp
@@ -57,17 +57,55 @@ _Z8multiplyii:
 	.def	main;	.scl	2;	.type	32;	.endef
 	.seh_proc	main
 main:
-.LFB2539:
+.LFB2215:
 	pushq	%rbp
 	.seh_pushreg	%rbp
 	movq	%rsp, %rbp
 	.seh_setframe	%rbp, 0
-	subq	$32, %rsp
-	.seh_stackalloc	32
+	subq	$48, %rsp
+	.seh_stackalloc	48
 	.seh_endprologue
 	call	__main
-	movl	$-1, %edx
-	movl	$-1, %ecx
+	movl	$3, -4(%rbp)
+	movl	-4(%rbp), %eax
+	movl	$19, %edx
+	movl	%eax, %ecx
+	call	_Z8multiplyii
+	movl	%eax, %edx
+	movq	.refptr._ZSt4cout(%rip), %rax
+	movq	%rax, %rcx
+	call	_ZNSolsEi
+	movq	%rax, %rcx
+	movq	.refptr._ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_(%rip), %rax
+	movq	%rax, %rdx
+	call	_ZNSolsEPFRSoS_E
+	movl	-4(%rbp), %eax
+	movl	$45, %edx
+	movl	%eax, %ecx
+	call	_Z8multiplyii
+	movl	%eax, %edx
+	movq	.refptr._ZSt4cout(%rip), %rax
+	movq	%rax, %rcx
+	call	_ZNSolsEi
+	movq	%rax, %rcx
+	movq	.refptr._ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_(%rip), %rax
+	movq	%rax, %rdx
+	call	_ZNSolsEPFRSoS_E
+	movl	-4(%rbp), %eax
+	movl	$-2, %edx
+	movl	%eax, %ecx
+	call	_Z8multiplyii
+	movl	%eax, %edx
+	movq	.refptr._ZSt4cout(%rip), %rax
+	movq	%rax, %rcx
+	call	_ZNSolsEi
+	movq	%rax, %rcx
+	movq	.refptr._ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_(%rip), %rax
+	movq	%rax, %rdx
+	call	_ZNSolsEPFRSoS_E
+	movl	-4(%rbp), %eax
+	movl	$0, %edx
+	movl	%eax, %ecx
 	call	_Z8multiplyii
 	movl	%eax, %edx
 	movq	.refptr._ZSt4cout(%rip), %rax
@@ -78,7 +116,7 @@ main:
 	movq	%rax, %rdx
 	call	_ZNSolsEPFRSoS_E
 	movl	$0, %eax
-	addq	$32, %rsp
+	addq	$48, %rsp
 	popq	%rbp
 	ret
 	.seh_endproc
@@ -88,12 +126,6 @@ _ZNSt8__detail30__integer_to_chars_is_unsignedIjEE:
 _ZNSt8__detail30__integer_to_chars_is_unsignedImEE:
 	.byte	1
 _ZNSt8__detail30__integer_to_chars_is_unsignedIyEE:
-	.byte	1
-_ZSt12__is_ratio_vISt5ratioILx1ELx1000000000EEE:
-	.byte	1
-_ZSt12__is_ratio_vISt5ratioILx1ELx1EEE:
-	.byte	1
-_ZSt12__is_ratio_vISt5ratioILx1000000000ELx1EEE:
 	.byte	1
 	.def	__main;	.scl	2;	.type	32;	.endef
 	.ident	"GCC: (Rev2, Built by MSYS2 project) 14.2.0"
