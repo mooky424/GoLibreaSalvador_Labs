@@ -2,15 +2,13 @@
 using namespace std;
 
 int multiply(int num, int multiplier) {
-    // Checks if one and only one of the numbers (num XOR multiplier) is 
-    // negative by XOR-ing their sign bits
-    bool neg = (num>>31) ^ (multiplier>>31);
-
-    // Converts both numbers to positive values
-    num = (num>>31) ? 0-num : num;
-    multiplier = (multiplier>>31) ? 0-multiplier : multiplier;
-    
     int result = 0;
+    
+    // Checks if multiplier is negative by 
+    bool neg = multiplier < 0 ? 1 : 0;
+
+    // Calculates absolute value of multiplier
+    multiplier = neg ? -multiplier : multiplier;
 
     // While multiplier still has significant bits continue shifting and adding
     while (multiplier != 0) {
@@ -24,7 +22,7 @@ int multiply(int num, int multiplier) {
         // Shift multiplier to the right by 1
         multiplier >>= 1;
     }
-    return result;
+    return neg ? -result : result;
 }
 
 int main(void) {
