@@ -1,6 +1,5 @@
 #include <iostream>
 using namespace std;
-#include <chrono>
 
 int multiply(int num, int multiplier) {
     int result = 0;
@@ -26,7 +25,11 @@ int multiply(int num, int multiplier) {
     return neg ? -result : result;
 }
 
-int main(void) {
-    cout << multiply (-1,-1) << endl;
+int main(void) { 
+    int x = 3;
+    cout << multiply (x,19) << endl;
+    cout << multiply (x,45) << endl;
+    cout << multiply (x,-2) << endl;
+    cout << multiply (x,0) << endl;
     return 0;
 }
