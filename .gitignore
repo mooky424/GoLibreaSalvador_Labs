@@ -3,3 +3,5 @@
 *.mp4
 *.mkv
 *.zip
+input.txt
+.clang-format
