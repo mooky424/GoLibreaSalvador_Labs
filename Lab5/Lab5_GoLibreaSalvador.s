@@ -65,8 +65,12 @@ main:
 	movq	.refptr._ZSt3cin(%rip), %rax
 	movq	%rax, %rcx
 	call	_ZNSirsERi
-	jmp	.L4
-.L9:
+	movl	-28(%rbp), %eax
+	testl	%eax, %eax
+	jns	.L6
+	movl	$-1, %eax
+	jmp	.L13
+.L12:
 	movq	%rsp, %rax
 	movq	%rax, %rbx
 	leaq	-32(%rbp), %rax
@@ -74,6 +78,13 @@ main:
 	movq	.refptr._ZSt3cin(%rip), %rax
 	movq	%rax, %rcx
 	call	_ZNSirsERi
+	movl	-32(%rbp), %eax
+	cmpl	$1, %eax
+	jg	.L7
+	movl	$-2, %eax
+	movq	%rbx, %rsp
+	jmp	.L13
+.L7:
 	movl	-32(%rbp), %ecx
 	movslq	%ecx, %rax
 	subq	$1, %rax
@@ -121,8 +132,8 @@ main:
 	salq	$2, %rax
 	movq	%rax, -24(%rbp)
 	movl	$0, -4(%rbp)
-	jmp	.L5
-.L6:
+	jmp	.L8
+.L9:
 	movl	-4(%rbp), %eax
 	movslq	%eax, %rdx
 	movq	%rdx, %rax
@@ -160,13 +171,13 @@ main:
 	movq	%rax, %rdx
 	call	_ZNSirsERi
 	addl	$1, -4(%rbp)
-.L5:
+.L8:
 	movl	-32(%rbp), %eax
 	cmpl	%eax, -4(%rbp)
-	jl	.L6
+	jl	.L9
 	movl	$0, -8(%rbp)
-	jmp	.L7
-.L8:
+	jmp	.L10
+.L11:
 	movl	-8(%rbp), %eax
 	addl	$1, %eax
 	movslq	%eax, %rdx
@@ -196,21 +207,22 @@ main:
 	movq	%rax, %rdx
 	call	_ZNSolsEPFRSoS_E
 	addl	$1, -8(%rbp)
-.L7:
+.L10:
 	movl	-32(%rbp), %eax
 	subl	$1, %eax
 	cmpl	%eax, -8(%rbp)
-	jl	.L8
+	jl	.L11
 	movq	%rbx, %rsp
-.L4:
+.L6:
 	movl	-28(%rbp), %eax
 	leal	-1(%rax), %edx
 	movl	%edx, -28(%rbp)
 	testl	%eax, %eax
 	setne	%al
 	testb	%al, %al
-	jne	.L9
+	jne	.L12
 	movl	$0, %eax
+.L13:
 	leaq	8(%rbp), %rsp
 	popq	%rbx
 	popq	%rbp

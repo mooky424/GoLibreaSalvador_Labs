@@ -19,11 +19,21 @@ int main() {
     // no. of test cases from input
     cin >> test_cases;
 
+    // if invalid no. of test cases end program
+    if (test_cases < 0) {
+        return -1;
+    }
+
     // while test cases > 0
     while (test_cases--) {
 
         // get no. of points
         cin >> points;
+
+        // if less than 2 points end program 
+        if (points < 2) {
+            return -2;
+        }
 
         // init Point3D array
         Point3D p[points];
