@@ -1,40 +1,42 @@
-#include<iostream>
-#include <cstdlib> 
+#include <cstdlib>
+#include <iostream>
+
 using namespace std;
 
 struct Point3D {
-  int x, y, z;
+    int x, y, z;
 };
 
-int calcDistance(int test_cases) {
-  while (test_cases--){
-    int n;
-    cin >> n;
-    Point3D point[n];
-
-    // Get all points
-    for (int i = 1; i <= n; i++) {
-      cin >> point[i].x >> point[i].y >> point[i].z;
-    }
-
-    // Calculate Manhattan distance between adjacent points
-    for (int i = 1; i <= n - 1; i++) {
-      int distance = abs(point[i].x - point[i + 1].x) +
-                     abs(point[i].y - point[i + 1].y) +
-                     abs(point[i].z - point[i + 1].z);
-      cout << distance << endl;
-    }
-
-    if (test_cases > 0) {
-      cout << endl;
-    }
-  }
-  return 0;
+int calcDistance(Point3D *a, Point3D *b) {
+    // M( p​1​, p​2​ ) = | x​1​ - ­ x​2​ | +
+    // | y​1​ - ­y​2​ | + | z​1​ -­ z​2​ |
+    return abs((*a).x - (*b).x) + abs((*a).y - (*b).y) + abs((*a).z - (*b).z);
 }
 
 int main() {
-  int test_cases;
-  cin >> test_cases;
-  calcDistance(test_cases);
-  return 0;
+    int test_cases, points;
+
+    // no. of test cases from input
+    cin >> test_cases;
+
+    // while test cases > 0
+    while (test_cases--) {
+
+        // get no. of points
+        cin >> points;
+
+        // init Point3D array
+        Point3D p[points];
+
+        // for no. of points get coordinates
+        for (int i = 0; i < points; i++) {
+            cin >> p[i].x >> p[i].y >> p[i].z;
+        }
+
+        // for each pair of points calculate Manhattan Distance
+        for (int i = 0; i < points - 1; i++) {
+            cout << calcDistance(&p[i], &p[i + 1]) << endl;
+        }
+    }
+    return 0;
 }
