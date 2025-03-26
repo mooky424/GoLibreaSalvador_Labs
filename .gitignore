@@ -1,5 +1,5 @@
 *.exe
-.vscode
+.vscode/
 *.mp4
 *.mkv
 *.zip
