@@ -27,20 +27,10 @@ int main() {
             cout << formattedTime << endl;
             counter++;
             if ((counter % 3) == 0) {
-                cout << "“This program has gone on for far too long. Type "
-                        "Ctrl+C to abort this timer application.”"
+                cout << "\"This program has gone on for far too long. Type Ctrl+C to abort this timer application.\""
                      << endl;
             }
             sleep(10);
-
-            // Added for handling zombie process (child process already finished
-            // but still remains in the processes list when you run ps -ax)
-            int status;
-            pid_t result = waitpid(pid, &status, WNOHANG);
-            if (result == pid) {
-                cout << "Child process (" << pid << ") already exited." << endl;
-            };
-
             continue;
         }
     }
