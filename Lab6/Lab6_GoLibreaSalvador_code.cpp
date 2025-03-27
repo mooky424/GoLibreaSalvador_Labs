@@ -14,7 +14,7 @@ int main() {
     }
 
     if (pid == 0) {
-        int myXclock = execlp("/usr/bin/xclock", "myXclock", NULL);
+        int myXclock = execl("/usr/bin/xclock", "myXclock", NULL);
         return -1;
     } else {
         int counter = 0;
