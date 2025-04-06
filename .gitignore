@@ -5,3 +5,6 @@
 *.zip
 input.txt
 .clang-format
+*
+!*.*
+!*/
