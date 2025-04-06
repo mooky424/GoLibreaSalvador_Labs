@@ -1,3 +1,7 @@
+*
+!*.*
+!*/
+
 *.exe
 .vscode/
 *.mp4
@@ -5,6 +9,3 @@
 *.zip
 input.txt
 .clang-format
-*
-!*.*
-!*/
