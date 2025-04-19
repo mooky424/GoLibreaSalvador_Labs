@@ -14,7 +14,7 @@ key_t SEM_KEY = 2468;
 
 struct shmStatus {
     char status; // Status of transfer
-    int count; // Number of bytes to write
+    int count;   // Number of bytes to write
 };
 
 int main(int argc, char *argv[]) {
@@ -93,9 +93,9 @@ int main(int argc, char *argv[]) {
             int bytesToWrite = static_cast<unsigned int>(shmStat->count);
             ssize_t written = write(output, shmData, bytesToWrite);
 
-            // if (written != bytesToWrite) {
-            //     perror("Write error");
-            // }
+            if (written != bytesToWrite) {
+                perror("Write error");
+            }
             shmStat->status = 2; // Reading status
         }
 
