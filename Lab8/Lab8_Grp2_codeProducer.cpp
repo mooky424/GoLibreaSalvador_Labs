@@ -1,15 +1,21 @@
 #include <cstring>
-#include <fstream>
+#include <fcntl.h>
 #include <iostream>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
+#include <sys/types.h>
 #include <unistd.h>
 using namespace std;
 
-int SHM_KEY_A = 1234;
-int SHM_KEY_B = 5678;
-int SEM_KEY = 2468;
+key_t SHM_KEY_A = 1234;
+key_t SHM_KEY_B = 5678;
+key_t SEM_KEY = 2468;
+
+struct shmStatus {
+    char status;
+    int count;
+};
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -29,15 +35,32 @@ int main(int argc, char *argv[]) {
         shmctl(existing_shmidB, IPC_RMID, NULL);
     }
 
-    ifstream input(argv[1], ios::binary); // Open input file
-    int shmSize = stoi(argv[2]);          // Get shared memory size
+    int shmSize = stoi(argv[2]); // Get shared memory size
+
+    int input = open(argv[1], O_RDONLY);
+    if (input == -1) {
+        perror("Input File Error");
+        return -1;
+    }
 
     // Get Shared Memory
     int shmidA = shmget(SHM_KEY_A, shmSize, IPC_CREAT | 0666);
-    int shmidB = shmget(SHM_KEY_B, 2, IPC_CREAT | 0666);
+    if (shmidA == -1) {
+        perror("Shared Memory A Error");
+        return -1;
+    }
+    int shmidB = shmget(SHM_KEY_B, sizeof(shmStatus), IPC_CREAT | 0666);
+    if (shmidB == -1) {
+        perror("Shared Memory B Error");
+        return -1;
+    }
 
     // Get Sempahore
     int semid = semget(SEM_KEY, 1, IPC_CREAT | 0666);
+    if (semid == -1) {
+        perror("Semaphore Creation Error");
+        return -1;
+    }
 
     // Set Semaphore to 1
     semctl(semid, 0, SETVAL, 1);
@@ -55,64 +78,57 @@ int main(int argc, char *argv[]) {
     // 3 - done
     // 0 - not started
     // Second byte contains the number of bytes to write to the new file
-    char *shmStatus = (char *)shmat(shmidB, NULL, 0); // Attach shmStatus
+    shmStatus *shmStat = (shmStatus *)shmat(shmidB, NULL, 0); // Attach shmStatus
 
-    shmStatus[0] = 0; // Set initial status to 0
-    shmStatus[1] = 0; // Set initial bytes transferred to 0
+    shmStat->status = 0; // Set initial status to 0
+    shmStat->count = 0; // Set initial bytes transferred to 0
 
     // Define Semaphore Operations
 
     struct sembuf lock[1]; // Decrement Semaphore by 1
     lock[0].sem_num = 0;
     lock[0].sem_op = -1;
-    lock[0].sem_flg = SEM_UNDO;
+    lock[0].sem_flg = 0;
 
     struct sembuf unlock[1]; // Increment Semaphore by 1
     unlock[0].sem_num = 0;
     unlock[0].sem_op = 1;
-    unlock[0].sem_flg = SEM_UNDO;
+    unlock[0].sem_flg = 0;
 
     bool done = false;
     while (!done) {
-        sleep(1); //Give consumer chance to run
+        sleep(1);
 
         if (semop(semid, lock, 1) == -1) {
-            perror("Sempahore Lock");
+            perror("Producer Semaphore Lock");
             break;
         }
 
-        // If current status is reading or not started
-        if (shmStatus[0] == 2 || shmStatus[0] == 0) {
-
-            // Save shmSize bytes of input file to shmData
-            input.read(shmData, shmSize); 
-            streamsize bytesRead = input.gcount(); 
+        if (shmStat->status == 2 || shmStat->status == 0) {
+            ssize_t bytesRead = read(input, shmData, shmSize);
 
             if (bytesRead > 0) {
-                // If bytesRead is less than buffer size, pad out with '\0'
-                if (bytesRead < shmSize) {
-                    shmData[bytesRead] = '\0';
-                }
-                shmStatus[1] = bytesRead;
-                shmStatus[0] = 1; //writing
-
-            } else {
-                // If no bytes read, end process
-                shmStatus[0] = 3;
+                shmStat->count = bytesRead;
+                shmStat->status = 1;        // Writing status
+            } else if (bytesRead == 0) { // EOF
+                shmStat->status = 3;
                 done = true;
+            } else {
+                perror("Read error");
+                break;
             }
         }
 
         if (semop(semid, unlock, 1) == -1) {
-            perror("Sempahore Unlock Fail");
+            perror("Producer Semaphore Unlock");
             break;
         }
     }
 
     // Detach Shared Memory
     shmdt(shmData);
-    shmdt(shmStatus);
-    input.close();
-    
+    shmdt(shmStat);
+    close(input);
+
     return 0;
 }
