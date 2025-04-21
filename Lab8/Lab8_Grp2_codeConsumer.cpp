@@ -90,12 +90,11 @@ int main(int argc, char *argv[]) {
         if (shmStat->status == 3) {
             done = true;
         } else if (shmStat->status == 1) {
-            int bytesToWrite = static_cast<unsigned int>(shmStat->count);
+            int bytesToWrite = shmStat->count;
             ssize_t written = write(output, shmData, bytesToWrite);
-
-            // if (written != bytesToWrite) {
-            //     perror("Write error");
-            // }
+            if (written != bytesToWrite) {
+                perror("Write error");
+            }
             shmStat->status = 2; // Reading status
         }
 
