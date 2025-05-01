@@ -33,19 +33,19 @@ int main(int argc, char *argv[]) {
     int shmSize = stoi(argv[2]); // Get shared memory sizse
 
     // Get Shared Memory
-    int shmidA = shmget(SHM_KEY_A, shmSize, IPC_CREAT | 0666);
+    int shmidA = shmget(SHM_KEY_A, shmSize, 0666);
     if (shmidA == -1) {
         perror("Shared Memory A Error");
         return -1;
     }
-    int shmidB = shmget(SHM_KEY_B, 2, IPC_CREAT | 0666);
+    int shmidB = shmget(SHM_KEY_B, sizeof(shmStatus), 0666);
     if (shmidB == -1) {
         perror("Shared Memory B Error");
         return -1;
     }
 
     // Get Sempahore
-    int semid = semget(SEM_KEY, 1, IPC_CREAT | 0666);
+    int semid = semget(SEM_KEY, 1, 0666);
     if (semid == -1) {
         perror("Semaphore Creation Error");
         return -1;
@@ -90,9 +90,8 @@ int main(int argc, char *argv[]) {
         if (shmStat->status == 3) {
             done = true;
         } else if (shmStat->status == 1) {
-            int bytesToWrite = static_cast<unsigned int>(shmStat->count);
+            int bytesToWrite = shmStat->count;
             ssize_t written = write(output, shmData, bytesToWrite);
-
             if (written != bytesToWrite) {
                 perror("Write error");
             }
