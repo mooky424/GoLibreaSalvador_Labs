@@ -1,10 +1,12 @@
 #include <iostream>
+#include <map>
 #include <queue>
 #include <string>
 #include <vector>
 
 using namespace std;
 
+// Struct for Processes to be used in executing scheduling algorithms
 struct process {
     int arrivalTime, burstTime, priority, index, firstResponse;
     process() {
@@ -24,114 +26,213 @@ struct process {
     }
 };
 
-struct statistics {
-    int totalBurst, totalArrival, totalTermination, totalFirstResponse;
-    statistics() {
+// Struct for process statistics for calculating criteria per each processes
+struct processStats {
+    int termination, burst, arrival, firstResponse;
+    processStats() {
+        this->arrival = 0;
+        this->burst = 0;
+        this->firstResponse = -1;
+        this->termination = 0;
+    }
+};
+
+// Struct for cpu statistics for calculating total criteria for CPU
+struct cpuStats {
+    int totalBurst, totalArrival, totalTermination, totalFirstResponse,
+        numProcesses, finalClock;
+    cpuStats() {
+        this->totalArrival = 0;
+        this->totalBurst = 0;
+        this->totalFirstResponse = 0;
+        this->totalTermination = 0;
+        this->numProcesses = 0;
+        this->finalClock = 0;
+    }
+    cpuStats(int numProcesses) {
         this->totalBurst = 0;
         this->totalArrival = 0;
         this->totalTermination = 0;
         this->totalFirstResponse = 0;
-    }
-    statistics(int totalBurst, int totalArrival, int totalTermination,
-               int totalFirstResponse) {
-        this->totalBurst = totalBurst;
-        this->totalArrival = totalArrival;
-        this->totalTermination = totalTermination;
-        this->totalFirstResponse = totalFirstResponse;
+        this->numProcesses = numProcesses;
+        this->finalClock = 0;
     }
 };
 
+// Sort by Arrival time (earliest first)
+// If same arrival time, index
 struct sortArrival {
     bool operator()(const process &a, const process &b) {
         if (a.arrivalTime == b.arrivalTime) {
-            return a.burstTime > b.burstTime;
+            return a.index > b.index;
         }
         return a.arrivalTime > b.arrivalTime;
     }
 };
 
+// Sort by Burst time (shortest first)
+// If same burst time, FCFS
+// If same arrival time, index
 struct sortBurst {
     bool operator()(const process &a, const process &b) {
         if (a.burstTime == b.burstTime) {
+            if (a.arrivalTime == b.arrivalTime) {
+                return a.index > b.index;
+            }
             return a.arrivalTime > b.arrivalTime;
         }
         return a.burstTime > b.burstTime;
     }
 };
 
+// Sort by Prirority
+// If same priority, SJF
+// If same arrival, FCFS
+// If same burst, index
 struct sortPriority {
     bool operator()(const process &a, const process &b) {
         if (a.priority == b.priority) {
+            if (a.burstTime == b.burstTime) {
+                if (a.arrivalTime == b.arrivalTime) {
+                    return a.index > b.index;
+                }
+                return a.arrivalTime > b.arrivalTime;
+            }
             return a.burstTime > b.burstTime;
         }
         return a.priority < b.priority;
     }
 };
 
+// Sort for Round Robin
+// Preempted processes always go behind new processes
+// Preempted:
+// If both preempted, FCFS,
+// If same arrival time, SJF
+// If same burst time, index
+// New:
+// If both new, FCFS
+// If same arrival time, SJF
+// If same burst time, index
 struct sortRoundRobin {
     bool operator()(const process &a, const process &b) {
-        if (a.priority >= 0 and b.priority >= 0) {
+        if (a.priority == -1 && b.priority == -1) {
             if (a.arrivalTime == b.arrivalTime) {
+                if (a.burstTime == b.burstTime) {
+                    return a.index > b.index;
+                }
                 return a.burstTime > b.burstTime;
             }
             return a.arrivalTime > b.arrivalTime;
-        } else {
-            if (a.arrivalTime == b.arrivalTime) {
-                return a.priority < b.priority;
-            }
-            return a.arrivalTime > b.arrivalTime;
+        } else if (a.priority == -1) {
+            return true;
+        } else if (b.priority == -1) {
+            return false;
         }
+
+        if (a.arrivalTime == b.arrivalTime) {
+            if (a.burstTime == b.burstTime) {
+                return a.index > b.index;
+            }
+            return a.burstTime > b.burstTime;
+        }
+        return a.arrivalTime > b.arrivalTime;
     }
 };
 
-void fcfs(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
-          int numProcess) {
+// Function to get Criteria based statistics gathered
+// stats = stats of total CPU processes (final clock, num processes)
+// statsMap = stats of each CPU process in a map
+void getCriteria(cpuStats stats, map<int, processStats> statsMap) {
 
-    priority_queue<process, vector<process>, sortArrival> currProcesses;
-    statistics stats;
-    int done = 0;
-    int clock = 0;
-    int start = 0;
-
-    // Execute processes
-    process p; // Keep track of current process
-    while (done < numProcess) {
-        // Get processes to be executed at 0
-        while (!arrivalQueue.empty() and
-               arrivalQueue.top().arrivalTime <= clock) {
-            process next = arrivalQueue.top();
-            arrivalQueue.pop();
-            currProcesses.push(next);
-        }
-
-        if (!currProcesses.empty()) {
-            p = currProcesses.top();
-            currProcesses.pop();
-
-            cout << clock << " " << p.index << " ";
-            cout << p.burstTime << "X" << endl;
-            done++;
-
-            if (p.firstResponse == 0) {
-                p.firstResponse = clock;
-            }
-            stats.totalArrival += p.arrivalTime;
-            stats.totalBurst += p.burstTime;
-            stats.totalFirstResponse += p.firstResponse;
-            stats.totalTermination += clock + p.burstTime;
-
-            clock += p.burstTime;
-        } else {
-            clock++;
-        }
+    // Tally all statistics from each process
+    for (auto &[index, process] : statsMap) {
+        stats.totalArrival += process.arrival;
+        stats.totalBurst += process.burst;
+        stats.totalFirstResponse += process.firstResponse;
+        stats.totalTermination += process.termination;
     }
+
+    // Calculate CPU Statistics
+    // CPU Util = Total Burst / Total Time Elapsed (Final Clock)
+    float cpuUtil = (float)stats.totalBurst / stats.finalClock * 100;
+
+    // CPU Throughput = No. of Processes / Total Time Elapsed (Final Clock)
+    float throughput = (float)(stats.numProcesses) / stats.finalClock;
+
+    // Average CPU Waiting Time
+    // = (Total Turnaround Time - Total Burst Time) / No. of Processes
+    float waitingTime = (float)(stats.totalTermination - stats.totalArrival -
+                                stats.totalBurst) /
+                        stats.numProcesses;
+
+    // Average CPU Turnaround Time
+    // = (Total Termination Time - Total Arrival Time) / No. of Processes
+    float turnaround = (float)(stats.totalTermination) -
+                       (float)(stats.totalArrival) / stats.numProcesses;
+
+    // Average CPU Response Time
+    // = (Total Response Time - Total Arrival Time) / No. of Processes
+    float responseTime =
+        (float)(stats.totalFirstResponse - stats.totalArrival) /
+        stats.numProcesses;
+
+    cout << "Total time elapsed: " << stats.finalClock << "ns" << endl;
+    cout << "Total CPU burst time: " << stats.totalBurst << "ns" << endl;
+    cout << "CPU Utilization: " << cpuUtil << "%" << endl;
+
+    cout << "Throughput: " << throughput << " processes/ns" << endl;
+
+    cout << "Waiting Times: " << endl;
+    for (auto &[index, process] : statsMap) {
+        cout << " ";
+        cout << "Process " << index << ": ";
+        cout << process.termination - process.arrival - process.burst << "ns";
+        cout << endl;
+    }
+
+    cout << "Average waiting time: "
+         << (float)(stats.totalTermination - stats.totalArrival -
+                    stats.totalBurst) /
+                stats.numProcesses
+         << "ns" << endl;
+
+    cout << "Turnaround Times: " << endl;
+    for (auto &[index, process] : statsMap) {
+        cout << " ";
+        cout << "Process " << index << ": ";
+        cout << process.termination - process.arrival << "ns";
+        cout << endl;
+    }
+
+    cout << "Average turnaround time: "
+         << (float)(stats.totalTermination - stats.totalArrival) /
+                stats.numProcesses
+         << "ns" << endl;
+
+    cout << "Response Times: " << endl;
+    for (auto &[index, process] : statsMap) {
+        cout << " ";
+        cout << "Process " << index << ": ";
+        cout << process.firstResponse - process.arrival << "ns";
+        cout << endl;
+    }
+
+    cout << "Average response time: "
+         << (float)(stats.totalFirstResponse - stats.totalArrival) /
+                stats.numProcesses
+         << "ns" << endl;
 }
 
-void sjf(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
-         int numProcess) {
+template <typename Comparator>
+void nonPreemptive(
+    Comparator algo, map<int, processStats> statsMap,
+    priority_queue<process, vector<process>, sortArrival> arrivalQueue,
+    int numProcess) {
 
-    priority_queue<process, vector<process>, sortBurst> currProcesses;
-    statistics stats;
+    // Priority Queue, sorted by Comparator
+    priority_queue<process, vector<process>, Comparator> currProcesses(algo);
+    cpuStats stats(numProcess);
     int done = 0;
     int clock = 0;
     int start = 0;
@@ -148,6 +249,7 @@ void sjf(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
             currProcesses.push(next);
         }
 
+        // Execute each process depending on sorting in currProcesses queue
         if (!currProcesses.empty()) {
             p = currProcesses.top();
             currProcesses.pop();
@@ -156,35 +258,39 @@ void sjf(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
             cout << p.burstTime << "X" << endl;
             done++;
 
-            if (p.firstResponse == 0) {
-                p.firstResponse = clock;
+            // Record First Response if not recorded yet
+            if (statsMap[p.index].firstResponse == -1) {
+                statsMap[p.index].firstResponse = clock;
             }
-            stats.totalArrival += p.arrivalTime;
-            stats.totalBurst += p.burstTime;
-            stats.totalFirstResponse += p.firstResponse;
-            stats.totalTermination += clock + p.burstTime;
 
+            // Record Termination
+            statsMap[p.index].termination = clock + p.burstTime;
+
+            // Increment clock by burst time
             clock += p.burstTime;
-        } else {
+        } else { // if no processes to be executed increment clock
             clock++;
         }
     }
+    stats.finalClock = clock; // Record Final statistics
+    getCriteria(stats, statsMap);
 }
 
-void srtf(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
-          int numProcess) {
+template <typename Comparator>
+void preemptive(
+    Comparator algo, map<int, processStats> statsMap,
+    priority_queue<process, vector<process>, sortArrival> arrivalQueue,
+    int numProcess) {
 
-    priority_queue<process, vector<process>, sortBurst> currProcesses;
-    statistics stats;
+    priority_queue<process, vector<process>, Comparator> currProcesses(algo);
+    cpuStats stats(numProcess);
     int done = 0;
     int clock = 0;
     int start = 0;
 
-    // Get process/es for time = 0
-
     process p;
     while (done < numProcess) {
-
+        // cout << "Clock: " << clock << endl;
         while (!arrivalQueue.empty() and
                arrivalQueue.top().arrivalTime <= clock) {
             process next = arrivalQueue.top();
@@ -192,12 +298,12 @@ void srtf(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
             currProcesses.push(next);
         }
 
-        if (p.index != currProcesses.top().index) {
-            if (p.index != 0) {
+        if (p.index != 0) {
+            if (p.index != currProcesses.top().index) {
                 cout << start << " " << p.index << " " << clock - start
                      << ((p.burstTime == 0) ? "X" : "") << endl;
+                start = clock;
             }
-            start = clock;
         }
 
         if (!currProcesses.empty()) { // Execute per time tick
@@ -208,10 +314,10 @@ void srtf(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
 
             // Execute one burst
             p.burstTime--;
-            stats.totalBurst += 1;
 
-            if (p.firstResponse == 0) {
-                p.firstResponse = clock;
+            // Record response time if not recorded yet
+            if (statsMap[p.index].firstResponse == -1) {
+                statsMap[p.index].firstResponse = clock;
             }
 
             // If burst > 0 put back in queue
@@ -219,89 +325,36 @@ void srtf(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
                 currProcesses.push(p);
             } else {
                 done++;
-                stats.totalArrival += p.arrivalTime;
-                stats.totalFirstResponse += p.firstResponse;
-                stats.totalTermination += clock + 1;
+                // Record termination time
+                statsMap[p.index].termination += clock + 1;
             }
         }
+
+        // If waiting for next process adjust start time
+        if (arrivalQueue.empty() and currProcesses.empty()) {
+            if (p.index == 0) {
+                start = clock;
+            }
+        }
+
         clock++;
 
-        if (currProcesses.empty()) {
+        if (done == numProcess) {
             cout << start << " " << p.index << " " << clock - start
                  << ((p.burstTime == 0) ? "X" : "") << endl;
         }
     }
-}
-
-void prio(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
-          int numProcess) {
-
-    priority_queue<process, vector<process>, sortPriority> currProcesses;
-    statistics stats;
-    int done = 0;
-    int clock = 0;
-    int start = 0;
-
-    // Get process/es for time = 0
-
-    process p;
-    while (done < numProcess) {
-
-        while (!arrivalQueue.empty() and
-               arrivalQueue.top().arrivalTime <= clock) {
-            process next = arrivalQueue.top();
-            arrivalQueue.pop();
-            currProcesses.push(next);
-        }
-
-        if (p.index != currProcesses.top().index) {
-            if (p.index != 0) {
-                cout << start << " " << p.index << " " << clock - start
-                     << ((p.burstTime == 0) ? "X" : "") << endl;
-            }
-            start = clock;
-        }
-
-        if (!currProcesses.empty()) { // Execute per time tick
-
-            // Get process to be executed
-            p = currProcesses.top();
-            currProcesses.pop();
-
-            // Execute one burst
-            p.burstTime--;
-            stats.totalBurst += 1;
-
-            if (p.firstResponse == 0) {
-                p.firstResponse = clock;
-            }
-
-            // If burst > 0 put back in queue
-            if (p.burstTime > 0) {
-                currProcesses.push(p);
-            } else {
-                done++;
-                stats.totalArrival += p.arrivalTime;
-                stats.totalFirstResponse += p.firstResponse;
-                stats.totalTermination += clock + 1;
-            }
-        }
-        clock++;
-
-        if (currProcesses.empty()) {
-            cout << start << " " << p.index << " " << clock - start
-                 << ((p.burstTime == 0) ? "X" : "") << endl;
-        }
-    }
+    stats.finalClock = clock;
+    getCriteria(stats, statsMap);
 }
 
 void rr(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
-        int numProcess, int quantum) {
+        map<int, processStats> statsMap, int numProcess, int quantum) {
 
     priority_queue<process, vector<process>, sortRoundRobin> currProcesses;
+    cpuStats stats(numProcess);
     int done = 0;
     int clock = 0;
-    int start = 0;
 
     // Get process/es for time = 0
 
@@ -323,8 +376,13 @@ void rr(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
 
             int delta = (p.burstTime < quantum) ? p.burstTime : quantum;
 
-            // Execute one burst
+            // Execute one quantum
             p.burstTime -= delta;
+
+            // R
+            if (statsMap[p.index].firstResponse == -1) {
+                statsMap[p.index].firstResponse = clock;
+            }
 
             // If burst > 0 put back in queue
             if (p.burstTime > 0) {
@@ -333,6 +391,7 @@ void rr(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
                 currProcesses.push(delta_p);
             } else {
                 done++;
+                statsMap[p.index].termination += clock + delta;
             }
             cout << clock << " " << p.index << " " << delta
                  << ((p.burstTime == 0) ? "X" : "") << endl;
@@ -343,11 +402,11 @@ void rr(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
             clock++;
         }
     }
+    stats.finalClock = clock;
+    getCriteria(stats, statsMap);
 }
 
-void getCriteria() {}
-
-void solve() {
+void solve(int testcase) {
     int numProcess;
     string algorithm;
     int quantum;
@@ -357,28 +416,43 @@ void solve() {
         cin >> quantum;
     }
 
+    
     priority_queue<process, vector<process>, sortArrival> processes;
-
+    map<int, processStats> statsMap;
+    
     for (int i = 0; i < numProcess; i++) {
+        
         int arrivalTime, burstTime, priority;
         cin >> arrivalTime >> burstTime >> priority;
         processes.push(process(arrivalTime, burstTime, priority, i + 1));
+        
+        processStats stats;
+        stats.arrival = arrivalTime;
+        stats.burst = burstTime;
+        statsMap[i + 1] = stats; // i + 1 is the process index
     }
+    
+    cout << testcase << " " << algorithm << endl;
 
     if (algorithm == "FCFS") {
-        fcfs(processes, numProcess);
+
+        sortArrival algo;
+        nonPreemptive(algo, statsMap, processes, numProcess);
     }
     if (algorithm == "SJF") {
-        sjf(processes, numProcess);
+        sortBurst algo;
+        nonPreemptive(algo, statsMap, processes, numProcess);
     }
     if (algorithm == "SRTF") {
-        srtf(processes, numProcess);
+        sortBurst algo;
+        preemptive(algo, statsMap, processes, numProcess);
     }
     if (algorithm == "P") {
-        prio(processes, numProcess);
+        sortPriority algo;
+        preemptive(algo, statsMap, processes, numProcess);
     }
     if (algorithm == "RR") {
-        rr(processes, numProcess, quantum);
+        rr(processes, statsMap, numProcess, quantum);
     }
 }
 
@@ -388,8 +462,7 @@ int main() {
     cin >> numTestCase;
 
     for (int i = 0; i < numTestCase; i++) {
-        cout << i + 1 << endl;
-        solve();
+        solve(i + 1);
     }
     return 0;
 }
