@@ -8,13 +8,12 @@ using namespace std;
 
 // Struct for Processes to be used in executing scheduling algorithms
 struct process {
-    int arrivalTime, burstTime, priority, index, firstResponse;
+    int arrivalTime, burstTime, priority, index;
     process() {
         this->arrivalTime = 0;
         this->burstTime = 0;
         this->priority = 0;
         this->index = 0;
-        this->firstResponse = 0;
     }
 
     process(int arrivalTime, int burstTime, int priority, int index) {
@@ -22,7 +21,6 @@ struct process {
         this->burstTime = burstTime;
         this->priority = priority;
         this->index = index;
-        this->firstResponse = 0;
     }
 };
 
@@ -379,7 +377,7 @@ void rr(priority_queue<process, vector<process>, sortArrival> arrivalQueue,
             // Execute one quantum
             p.burstTime -= delta;
 
-            // R
+            // Record First Response
             if (statsMap[p.index].firstResponse == -1) {
                 statsMap[p.index].firstResponse = clock;
             }
@@ -431,7 +429,7 @@ void solve(int testcase) {
         stats.burst = burstTime;
         statsMap[i + 1] = stats; // i + 1 is the process index
     }
-    
+
     cout << testcase << " " << algorithm << endl;
 
     if (algorithm == "FCFS") {
